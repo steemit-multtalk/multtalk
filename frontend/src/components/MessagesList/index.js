@@ -27,7 +27,7 @@ import MessageOptionsMenu from "../MessageOptionsMenu";
 import whatsBackground from "../../assets/wa-background.png";
 import LocationPreview from "../LocationPreview";
 import whatsBackgroundDark from "../../assets/wa-background-dark.png"; //DARK MODE PLW DESIGN//
-import VCardPreview from "../VCardPreview";
+import VcardPreview from "../VCardPreview";
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
 import { SocketContext } from "../../context/Socket/SocketContext";
@@ -189,7 +189,7 @@ const useStyles = makeStyles((theme) => ({
     overflowWrap: "break-word",
     padding: "3px 80px 6px 6px",
   },
-  
+
   textContentItemEdited: {
     overflowWrap: "break-word",
     padding: "3px 120px 6px 6px",
@@ -214,7 +214,7 @@ const useStyles = makeStyles((theme) => ({
 
   timestamp: {
     fontSize: 11,
-    padding:7,  
+    padding: 7,
     position: "absolute",
     bottom: 0,
     right: 5,
@@ -425,7 +425,43 @@ const MessagesList = ({ ticket, ticketId, isGroup }) => {
     setAnchorEl(null);
   };
 
+  const extrairNomeENumero = (vcard) => {
+    const nomeMatch = vcard.match(/FN:(.*?)\n/);
+    const nome = nomeMatch ? nomeMatch[1] : '';
+
+    const numeroMatch = vcard.match(/waid=(\d+)/);
+    const numero = numeroMatch ? numeroMatch[1].replace(/\D/g, '') : '';
+    if (nome && numero) {
+      return { nome, numero };
+    } else {
+      return null;
+    }
+  }
+
   const checkMessageMedia = (message) => {
+
+    if (message.mediaType === "contactMessage") {
+
+      const vcardPreviewInfo = extrairNomeENumero(message.body)
+
+      return <VcardPreview key={message.id} contact={vcardPreviewInfo?.nome} number={vcardPreviewInfo?.numero} />
+    }
+
+    if (message.mediaType === "contactsArrayMessage") {
+
+      const contactsArray = JSON.parse(message.body);
+
+      return contactsArray.map((contact, index) => {
+
+        const vcardPreviewInfo = extrairNomeENumero(contact)
+
+
+        return <VcardPreview key={index} contact={vcardPreviewInfo?.nome} number={vcardPreviewInfo?.numero} />
+      })
+
+    }
+
+
     if (message.mediaType === "locationMessage" && message.body.split('|').length >= 2) {
       let locationParts = message.body.split('|')
       let imageLocation = locationParts[0]
@@ -438,68 +474,11 @@ const MessagesList = ({ ticket, ticketId, isGroup }) => {
 
       return <LocationPreview image={imageLocation} link={linkLocation} description={descriptionLocation} />
     }
-    else
-    if (message.mediaType === "contactMessage") {
-      let array = message.body.split("\n");
-      let obj = [];
-      let contact = "";
-      for (let index = 0; index < array.length; index++) {
-        const v = array[index];
-        let values = v.split(":");
-        for (let ind = 0; ind < values.length; ind++) {
-          if (values[ind].indexOf("+") !== -1) {
-            obj.push({ number: values[ind] });
-          }
-          if (values[ind].indexOf("FN") !== -1) {
-            contact = values[ind + 1];
-          }
-        }
-      }
-      //console.log(array);
-      //console.log(contact);
-      //console.log(obj[0].number);
-      return <VCardPreview contact={contact} numbers={obj[0].number} />
-    }
-    /* else if (message.mediaType === "vcard") {
-      let array = message.body.split("\n");
-      let obj = [];
-      let contact = "";
-      for (let index = 0; index < array.length; index++) {
-        const v = array[index];
-        let values = v.split(":");
-        for (let ind = 0; ind < values.length; ind++) {
-          if (values[ind].indexOf("+") !== -1) {
-            obj.push({ number: values[ind] });
-          }
-          if (values[ind].indexOf("FN") !== -1) {
-            contact = values[ind + 1];
-          }
-        }
-      }
-      return <VcardPreview contact={contact} numbers={obj[0].number} />
-    } */
-    /*else if (message.mediaType === "multi_vcard") {
-      console.log("multi_vcard")
-      console.log(message)
-      
-      if(message.body !== null && message.body !== "") {
-        let newBody = JSON.parse(message.body)
-        return (
-          <>
-            {
-            newBody.map(v => (
-              <VcardPreview contact={v.name} numbers={v.number} />
-            ))
-            }
-          </>
-        )
-      } else return (<></>)
-    }*/
+
     else if (message.mediaType === "image") {
       return <ModalImageCors imageUrl={message.mediaUrl} />;
     } else if (message.mediaType === "audio") {
 
-      //console.log(isIOS);
 
       if (isIOS) {
         message.mediaUrl = message.mediaUrl.replace("ogg", "mp3");
@@ -543,7 +522,7 @@ const MessagesList = ({ ticket, ticketId, isGroup }) => {
         </>
       );
     }
-};
+  };
 
   /*
     const renderMessageAck = (message) => {
@@ -562,23 +541,23 @@ const MessagesList = ({ ticket, ticketId, isGroup }) => {
     };
     */
 
-    const renderMessageAck = (message) => {
-      if (message.ack === 0) {
-        return <AccessTime fontSize="small" className={classes.ackIcons} />;
-      }
-      if (message.ack === 1) {
-        return <Done fontSize="small" className={classes.ackIcons} />;
-      }
-      if (message.ack === 2) {
-        return <Done fontSize="small" className={classes.ackIcons} />;
-      }
-      if (message.ack === 3) {
-        return <DoneAll fontSize="small" className={classes.ackIcons} />;
-      }
-      if (message.ack === 4 || message.ack === 5) {
-        return <DoneAll fontSize="small" className={classes.ackDoneAllIcon} style={{color:'#0377FC'}} />;
-      }
-    };
+  const renderMessageAck = (message) => {
+    if (message.ack === 0) {
+      return <AccessTime fontSize="small" className={classes.ackIcons} />;
+    }
+    if (message.ack === 1) {
+      return <Done fontSize="small" className={classes.ackIcons} />;
+    }
+    if (message.ack === 2) {
+      return <Done fontSize="small" className={classes.ackIcons} />;
+    }
+    if (message.ack === 3) {
+      return <DoneAll fontSize="small" className={classes.ackIcons} />;
+    }
+    if (message.ack === 4 || message.ack === 5) {
+      return <DoneAll fontSize="small" className={classes.ackDoneAllIcon} style={{ color: '#0377FC' }} />;
+    }
+  };
 
   const renderDailyTimestamps = (message, index) => {
     if (index === 0) {
@@ -793,17 +772,22 @@ const MessagesList = ({ ticket, ticketId, isGroup }) => {
                   </div>
                 )}
 
-                {(message.mediaUrl || message.mediaType === "locationMessage" || message.mediaType === "vcard" || message.mediaType === "contactMessage"
-                  //|| message.mediaType === "multi_vcard" 
-                ) && checkMessageMedia(message)}
+                {/* {(message.mediaUrl || message.mediaType === "locationMessage" || message.mediaType === "vcard" || message.mediaType === "contactMessage" ) && checkMessageMedia(message)} */}
+                {(message.mediaUrl || message.mediaType === 'contactMessage' || message.mediaType === 'contactsArrayMessage' || message.mediaType === "locationMessage") && checkMessageMedia(message)}
+
                 <div className={classes.textContentItem}>
                   {message.quotedMsg && renderQuotedMessage(message)}
-                  <MarkdownWrapper>
-                    {message.mediaType === "locationMessage" || message.mediaType === "contactMessage" ? null : message.body}
-                  </MarkdownWrapper>
-                  <span className={classes.timestamp}>
-                    {format(parseISO(message.createdAt), "HH:mm")}
-                  </span>
+                  {/* <MarkdownWrapper>  {message.mediaType === "locationMessage" || message.mediaType === "contactMessage" ? null : message.body} </MarkdownWrapper> */}
+                  <MarkdownWrapper>{(message.mediaType === 'contactMessage' || message.mediaType === 'contactsArrayMessage' || message.mediaType === "locationMessage") ? ' ' : message.body}</MarkdownWrapper>
+
+
+
+                  {/* <span className={classes.timestamp}>  {format(parseISO(message.createdAt), "HH:mm")} </span> */}
+
+                  <span className={classes.timestamp}>   {message.isEdited ? "Editada " + format(parseISO(message.createdAt), "HH:mm") : format(parseISO(message.createdAt), "HH:mm")}</span>
+
+
+
                 </div>
               </div>
             </React.Fragment>
@@ -825,9 +809,10 @@ const MessagesList = ({ ticket, ticketId, isGroup }) => {
                 >
                   <ExpandMore />
                 </IconButton>
-                {(message.mediaUrl || message.mediaType === "locationMessage" || message.mediaType === "vcard" || message.mediaType === "contactMessage"
-                  //|| message.mediaType === "multi_vcard" 
-                ) && checkMessageMedia(message)}
+                {/* {(message.mediaUrl || message.mediaType === "locationMessage" || message.mediaType === "vcard" || message.mediaType === "contactMessage" || message.mediaType === "multi_vcard"   ) && checkMessageMedia(message)} */}
+                {(message.mediaUrl || message.mediaType === 'contactMessage' || message.mediaType === 'contactsArrayMessage' || message.mediaType === "locationMessage") && checkMessageMedia(message)}
+
+
                 <div
                   className={clsx(classes.textContentItem, {
                     [classes.textContentItemDeleted]: message.isDeleted,
@@ -841,11 +826,13 @@ const MessagesList = ({ ticket, ticketId, isGroup }) => {
                     />
                   )}
                   {message.quotedMsg && renderQuotedMessage(message)}
-                  <MarkdownWrapper>{message.body}</MarkdownWrapper>
-                  <span className={classes.timestamp}>
-                    {format(parseISO(message.createdAt), "HH:mm")}
-                    {renderMessageAck(message)}
-                  </span>
+                  {/* <MarkdownWrapper>{message.body}</MarkdownWrapper> */}
+                  <MarkdownWrapper>{(message.mediaType === 'contactMessage' || message.mediaType === 'contactsArrayMessage' || message.mediaType === "locationMessage") ? ' ' : message.body}</MarkdownWrapper>
+
+                  <span className={classes.timestamp}>    {format(parseISO(message.createdAt), "HH:mm")}   {renderMessageAck(message)}  </span>
+
+
+
                 </div>
               </div>
             </React.Fragment>

@@ -352,6 +352,25 @@ const getBodyButton = (msg: proto.IWebMessageInfo): string => {
   }
 };
 
+const extractArrayVcard = (msg: proto.IWebMessageInfo) => {
+
+  if (!msg?.message?.contactsArrayMessage) return null;
+
+  const { contacts } = msg.message.contactsArrayMessage;
+
+  const vCardArray = [];
+
+  contacts.forEach((contact: proto.Message.IContactMessage) => {
+
+    vCardArray.push(contact.vcard);
+
+
+  });
+
+  return JSON.stringify(vCardArray);
+
+};
+
 const msgLocation = (image, latitude, longitude) => {
   if (image) {
     var b64 = Buffer.from(image).toString("base64");
@@ -366,9 +385,11 @@ export const getBodyMessage = (msg: proto.IWebMessageInfo): string | null => {
   try {
     let type = getTypeMessage(msg);
 
+    console.log('type', type)
+
     const types = {
       conversation: msg?.message?.conversation,
-      editedMessage: msg?.message?.editedMessage?.message?.protocolMessage?.editedMessage?.conversation,
+      // editedMessage: msg?.message?.editedMessage?.message?.protocolMessage?.editedMessage?.conversation || msg?.message?.protocolMessage?.editedMessage?.conversation || msg.message?.editedMessage?.message?.protocolMessage?.editedMessage?.conversation,
       imageMessage: msg.message?.imageMessage?.caption,
       videoMessage: msg.message?.videoMessage?.caption,
       extendedTextMessage: msg.message?.extendedTextMessage?.text,
@@ -379,7 +400,8 @@ export const getBodyMessage = (msg: proto.IWebMessageInfo): string | null => {
       viewOnceMessage: getBodyButton(msg) || msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId,
       stickerMessage: "sticker",
       contactMessage: msg.message?.contactMessage?.vcard,
-      contactsArrayMessage: (msg.message?.contactsArrayMessage?.contacts) && contactsArrayMessageGet(msg),
+      // contactsArrayMessage: (msg.message?.contactsArrayMessage?.contacts) && contactsArrayMessageGet(msg),
+      contactsArrayMessage: extractArrayVcard(msg),
       //locationMessage: `Latitude: ${msg.message.locationMessage?.degreesLatitude} - Longitude: ${msg.message.locationMessage?.degreesLongitude}`,
       locationMessage: msgLocation(
         msg.message?.locationMessage?.jpegThumbnail,
@@ -393,13 +415,15 @@ export const getBodyMessage = (msg: proto.IWebMessageInfo): string | null => {
       listMessage: getBodyButton(msg) || msg.message?.listResponseMessage?.title,
       listResponseMessage: msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId,
       reactionMessage: msg.message?.reactionMessage?.text || "reaction",
+      editedMessage: msg?.message?.protocolMessage?.editedMessage?.conversation || msg.message?.editedMessage?.message?.protocolMessage?.editedMessage?.conversation,
+      protocolMessage: msg.message?.protocolMessage?.type || msg.message?.ephemeralMessage?.message?.protocolMessage?.type || msg?.message?.protocolMessage?.editedMessage?.conversation,
     };
 
     const objKey = Object.keys(types).find(key => key === type);
 
     if (!objKey) {
       logger.warn(`#### Nao achou o type 152: ${type}
-${JSON.stringify(msg)}`);
+      ${JSON.stringify(msg)}`);
       Sentry.setExtra("Mensagem", { BodyMsg: msg.message, msg, type });
       Sentry.captureException(
         new Error("Novo Tipo de Mensagem em getTypeMessage")
@@ -1038,6 +1062,7 @@ const isValidMsg = (msg: proto.IWebMessageInfo): boolean => {
       msgType === "protocolMessage" ||
       msgType === "listResponseMessage" ||
       msgType === "listMessage" ||
+      msgType === "editedMessage" ||
       msgType === "viewOnceMessage";
 
     if (!ifType) {
@@ -1100,7 +1125,7 @@ const verifyQueue = async (
     if (firstQueue?.options) {
       chatbot = firstQueue.options.length > 0;
     }
-	
+
 
     //inicia integração dialogflow/n8n
     if (
@@ -1160,7 +1185,7 @@ const verifyQueue = async (
 
   /**
    * recebe as mensagens dos usuários e envia as opções de fila
-   * tratamento de mensagens para resposta aos usuarios apartir do chatbot/fila.         
+   * tratamento de mensagens para resposta aos usuarios apartir do chatbot/fila.
    */
   const botText = async () => {
     let options = "";
@@ -1175,11 +1200,11 @@ const verifyQueue = async (
     };
     let lastMsg = map_msg.get(contact.number)
     let invalidOption = "Opção inválida, por favor, escolha uma opção válida."
-    
+
 
     // console.log('getBodyMessage(msg)', getBodyMessage(msg))
     console.log('textMessage2', textMessage)
-     console.log("lastMsg::::::::::::':", contact.number)
+    console.log("lastMsg::::::::::::':", contact.number)
     // map_msg.set(contact.number, lastMsg);
     if (!lastMsg?.msg || getBodyMessage(msg).includes('#') || textMessage.text === 'concluido' || lastMsg.msg !== textMessage.text && !lastMsg.invalid_option) {
       const sendMsg = await wbot.sendMessage(
@@ -1299,7 +1324,7 @@ const verifyQueue = async (
         );
         await verifyMessage(sentMessage, ticket, contact);
       }
-	        if (choosenQueue.mediaPath !== null && choosenQueue.mediaPath !== "") {
+      if (choosenQueue.mediaPath !== null && choosenQueue.mediaPath !== "") {
         const filePath = path.resolve("public", choosenQueue.mediaPath);
 
         const optionsMsg = await getMessageOptions(choosenQueue.mediaName, filePath);
@@ -1620,6 +1645,39 @@ const handleChartbot = async (ticket: Ticket, msg: WAMessage, wbot: Session, don
       ],
     });
 
+    if (queueOptions.length === 0) {
+      const textMessage = {
+        text: formatBody(`\u200e${currentOption.message}`, ticket.contact),
+      };
+
+      const sendMsg = await wbot.sendMessage(
+        `${ticket.contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`,
+        textMessage
+      );
+
+      await verifyMessage(sendMsg, ticket, ticket.contact);
+      if (currentOption.mediaPath !== null && currentOption.mediaPath !== "") {
+
+        const filePath = path.resolve("public", currentOption.mediaPath);
+
+
+        const optionsMsg = await getMessageOptions(currentOption.mediaName, filePath);
+
+        let sentMessage = await wbot.sendMessage(`${ticket.contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`, { ...optionsMsg });
+
+        await verifyMediaMessage(sentMessage, ticket, ticket.contact);
+      }
+
+      await verifyMessage(sendMsg, ticket, ticket.contact);
+
+      await ticket.update({
+        queueOptionId: null,
+        chatbot: false,
+      });
+      //console.log("Fim do chatbot. Última opção alcançada.");
+      return;
+    }
+
     if (queueOptions.length > -1) {
 
       const companyId = ticket.companyId;
@@ -1712,7 +1770,7 @@ const handleChartbot = async (ticket: Ticket, msg: WAMessage, wbot: Session, don
         );
 
         await verifyMessage(sendMsg, ticket, ticket.contact);
-		        if (currentOption.mediaPath !== null && currentOption.mediaPath !== "")  {
+        if (currentOption.mediaPath !== null && currentOption.mediaPath !== "") {
 
           const filePath = path.resolve("public", currentOption.mediaPath);
 
@@ -1890,6 +1948,54 @@ const handleMessage = async (
       return;
     }
 
+    if (msgType === "editedMessage" || msgType === "protocolMessage") {
+
+
+      const msgKeyIdEdited = msgType === "editedMessage" ? msg.message.editedMessage.message.protocolMessage.key.id : msg.message?.protocolMessage.key.id;
+      const bodyEdited = msgType === "editedMessage" ? msg.message.editedMessage.message.protocolMessage.editedMessage.conversation : msg.message.protocolMessage?.editedMessage?.extendedTextMessage?.text || msg.message.protocolMessage?.editedMessage?.conversation;
+      const io = getIO();
+
+      try {
+        const messageToUpdate = await Message.findOne({
+          where: {
+            id: msgKeyIdEdited,
+            companyId,
+            ticketId: ticket.id
+          }
+        })
+
+        if (!messageToUpdate) return
+
+        await messageToUpdate.update({ isEdited: true, body: bodyEdited });
+
+        await ticket.update({ lastMessage: bodyEdited })
+
+        // await ticketTraking.update({
+        //   lastMessage: bodyEdited,
+        // });
+
+        io.to(messageToUpdate.ticketId.toString())
+          .to(ticket.status)
+          .emit(`company-${companyId}-appMessage`, {
+            action: "update",
+            message: messageToUpdate,
+            ticket: ticket,
+            contact: ticket.contact
+          });
+
+        io.to(ticket.status)
+          .to("notification")
+          .to(String(ticket.id))
+          .emit(`company-${companyId}-ticket`, {
+            action: "update",
+            ticket
+          });
+      } catch (err) {
+        Sentry.captureException(err);
+        logger.error(`Error handling message ack. Err: ${err}`);
+      }
+      return
+    }
 
     const ticketTraking = await FindOrCreateATicketTrakingService({
       ticketId: ticket.id,
@@ -1936,7 +2042,7 @@ const handleMessage = async (
       console.log(e);
     }
 
-    // Atualiza o ticket se a ultima mensagem foi enviada por mim, para que possa ser finalizado. 
+    // Atualiza o ticket se a ultima mensagem foi enviada por mim, para que possa ser finalizado.
     try {
       await ticket.update({
         fromMe: msg.key.fromMe,
@@ -1991,7 +2097,7 @@ const handleMessage = async (
           return;
         }
 
-        console.log('bodyMaaaaaaa1111aaaaaessage:', bodyMessage);
+        // console.log('bodyMaaaaaaa1111aaaaaessage:', bodyMessage);
         if (scheduleType.value === "queue" && ticket.queueId !== null) {
 
           /**
@@ -2262,12 +2368,19 @@ const handleMessage = async (
   }
 };
 
-const handleMsgAck = async (
-  msg: WAMessage,
-  chat: number | null | undefined
-) => {
+const handleMsgAck = async (msg: WAMessage, chat: number | null | undefined) => {
+
   await new Promise((r) => setTimeout(r, 500));
   const io = getIO();
+  let messageStubType = null;
+
+  // @ts-ignore
+  if (msg.update && msg.update.messageStubType) {
+    // @ts-ignore
+    messageStubType = msg.update.messageStubType;
+    console.log("entrou 321")
+  }
+
 
   try {
     const messageToUpdate = await Message.findByPk(msg.key.id, {
@@ -2281,8 +2394,12 @@ const handleMsgAck = async (
       ],
     });
 
-    if (!messageToUpdate) return;
-    await messageToUpdate.update({ ack: chat });
+
+    if (!messageToUpdate || messageToUpdate?.isDeleted) return;
+
+    const response = await messageToUpdate.update({ ack: chat, isDeleted: messageStubType === 1 });
+
+
     io.to(messageToUpdate.ticketId.toString()).emit(
       `company-${messageToUpdate.companyId}-appMessage`,
       {
@@ -2365,6 +2482,9 @@ const verifyCampaignMessageAndCloseTicket = async (
 };
 
 const filterMessages = (msg: WAMessage): boolean => {
+
+  if (msg?.message?.protocolMessage?.editedMessage?.conversation || msg.message?.editedMessage?.message?.protocolMessage?.editedMessage?.conversation) return true;
+
   if (msg.message?.protocolMessage) return false;
 
   if (
@@ -2376,6 +2496,7 @@ const filterMessages = (msg: WAMessage): boolean => {
     ].includes(msg.messageStubType as WAMessageStubType)
   )
     return false;
+
 
   return true;
 };
@@ -2397,7 +2518,6 @@ const wbotMessageListener = async (wbot: Session, companyId: number): Promise<vo
 
         if (!messageExists) {
 
-          // console.log('body-------------------:', message);
           await handleMessage(message, wbot, companyId);
           await verifyRecentCampaign(message, companyId);
           await verifyCampaignMessageAndCloseTicket(message, companyId);
@@ -2413,6 +2533,8 @@ const wbotMessageListener = async (wbot: Session, companyId: number): Promise<vo
         handleMsgAck(message, message.update.status);
       });
     });
+
+
 
     // wbot.ev.on("messages.set", async (messageSet: IMessage) => {
     //   messageSet.messages.filter(filterMessages).map(msg => msg);

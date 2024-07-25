@@ -243,3 +243,16 @@ export const getContactVcard = async (
 
   return res.status(200).json(contact);
 };
+
+export const findOrCreate = async (req: Request, res: Response): Promise<Response> => {
+  const { name, number } = req.body as IndexGetContactQuery;
+  const { companyId } = req.user;
+
+  const contact = await GetContactService({
+    name,
+    number,
+    companyId
+  });
+
+  return res.status(200).json(contact);
+};

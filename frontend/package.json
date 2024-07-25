@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "version": "0.1.0",
-  "versionSystem": "4.8.2",
+  "versionSystem": "4.8.5",
   "nomeEmpresa": "PLW Design",
   "private": true,
   "dependencies": {
@@ -17,6 +17,7 @@
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.0.4",
     "@testing-library/user-event": "^12.1.7",
+    "@whiskeysockets/baileys": "github:allgood/Baileys#fixProfilePic",
     "axios": "^0.21.1",
     "bootstrap": "^5.2.3",
     "chart.js": "^3.9.1",
