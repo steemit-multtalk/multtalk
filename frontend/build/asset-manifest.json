@@ -1,30 +1,21 @@
 {
   "files": {
-    "main.css": "/static/css/main.40de1c4b.chunk.css",
-    "main.js": "/static/js/main.03e2d392.chunk.js",
-    "runtime-main.js": "/static/js/runtime-main.1720eec4.js",
-    "static/css/2.406c6332.chunk.css": "/static/css/2.406c6332.chunk.css",
-    "static/js/2.90e266eb.chunk.js": "/static/js/2.90e266eb.chunk.js",
-    "static/js/3.439d56ab.chunk.js": "/static/js/3.439d56ab.chunk.js",
-    "index.html": "/index.html",
-    "precache-manifest.6e1a5a9dcd16107507a41380a9dd24b2.js": "/precache-manifest.6e1a5a9dcd16107507a41380a9dd24b2.js",
-    "service-worker.js": "/service-worker.js",
-    "static/js/2.90e266eb.chunk.js.LICENSE.txt": "/static/js/2.90e266eb.chunk.js.LICENSE.txt",
-    "static/js/3.439d56ab.chunk.js.LICENSE.txt": "/static/js/3.439d56ab.chunk.js.LICENSE.txt",
-    "static/media/chat_notify.mp3": "/static/media/chat_notify.2529c259.mp3",
-    "static/media/logo.png": "/static/media/logo.5df0148e.png",
-    "static/media/n8n.png": "/static/media/n8n.5c788b8d.png",
-    "static/media/planilha.xlsx": "/static/media/planilha.549edeba.xlsx",
-    "static/media/sound.mp3": "/static/media/sound.9fd5812c.mp3",
-    "static/media/wa-background-dark.png": "/static/media/wa-background-dark.8244f042.png",
-    "static/media/wa-background.png": "/static/media/wa-background.2675a051.png",
-    "static/media/webhook.png": "/static/media/webhook.e5374d73.png"
+    "main.css": "/static/css/main.b0ecba99.css",
+    "main.js": "/static/js/main.20ee1dc8.js",
+    "static/js/718.b37dbbab.chunk.js": "/static/js/718.b37dbbab.chunk.js",
+    "static/media/wa-background-light.png": "/static/media/wa-background-light.bded4f44087fb4e89252.png",
+    "static/media/n8n.png": "/static/media/n8n.55dcf941cabd688d5fa8.png",
+    "static/media/wa-background.png": "/static/media/wa-background.ab8484d1eefb1548a030.png",
+    "static/media/wa-background-dark.jpg": "/static/media/wa-background-dark.0d75d268d36db06eeace.jpg",
+    "static/media/wa-background-dark.png": "/static/media/wa-background-dark.4c52474fa80c52e227a9.png",
+    "static/media/sound.mp3": "/static/media/sound.ef8044653cdbcfce8b1b.mp3",
+    "static/media/webhook.png": "/static/media/webhook.20ba71267d53257c1a83.png",
+    "static/media/chat_notify.mp3": "/static/media/chat_notify.a4aa05a5f146d082d6be.mp3",
+    "static/media/planilha.xlsx": "/static/media/planilha.1579c669dcff23936cbd.xlsx",
+    "index.html": "/index.html"
   },
   "entrypoints": [
-    "static/js/runtime-main.1720eec4.js",
-    "static/css/2.406c6332.chunk.css",
-    "static/js/2.90e266eb.chunk.js",
-    "static/css/main.40de1c4b.chunk.css",
-    "static/js/main.03e2d392.chunk.js"
+    "static/css/main.b0ecba99.css",
+    "static/js/main.20ee1dc8.js"
   ]
 }

@@ -34,10 +34,10 @@ contactRoutes.post("/contacts", isAuth, ContactController.store);
 
 contactRoutes.put("/contacts/:contactId", isAuth, ContactController.update);
 
-contactRoutes.post("/contacts/findOrCreate", isAuth, ContactController.findOrCreate);
-
 contactRoutes.delete("/contacts/:contactId", isAuth, ContactController.remove);
 
 contactRoutes.get("/contact", isAuth, ContactController.getContactVcard);
+
+
 
 export default contactRoutes;

@@ -1,48 +1,17 @@
 import React, { useState, useEffect } from "react";
-import qs from 'query-string'
-
+import qs from 'query-string';
 import * as Yup from "yup";
-import { useHistory } from "react-router-dom";
-import { Link as RouterLink } from "react-router-dom";
+import { useHistory, Link as RouterLink } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Formik, Form, Field } from "formik";
 import usePlans from "../../hooks/usePlans";
-import Avatar from "@material-ui/core/Avatar";
-import Button from "@material-ui/core/Button";
-import CssBaseline from "@material-ui/core/CssBaseline";
-import TextField from "@material-ui/core/TextField";
-import Link from "@material-ui/core/Link";
-import Grid from "@material-ui/core/Grid";
-import Box from "@material-ui/core/Box";
-import InputMask from 'react-input-mask';
-import {
-	FormControl,
-	InputLabel,
-	MenuItem,
-	Select,
-} from "@material-ui/core";
-import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
-import Typography from "@material-ui/core/Typography";
+import { Button, CssBaseline, TextField, Link, Grid, Box, Container, FormControl, InputLabel, MenuItem, Select } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
-import Container from "@material-ui/core/Container";
-import logo from "../../assets/logo.png";
-import { i18n } from "../../translate/i18n";
-
-import { openApi } from "../../services/api";
+import InputMask from 'react-input-mask';
+import api, { openApi } from "../../services/api";
 import toastError from "../../errors/toastError";
 import moment from "moment";
-const Copyright = () => {
-	return (
-		<Typography variant="body2" color="textSecondary" align="center">
-			{"Copyright © "}
-			<Link color="inherit" href="#">
-				Mult Talk | Steemit
-			</Link>{" "}
-		   {new Date().getFullYear()}
-			{"."}
-		</Typography>
-	);
-};
+import { i18n } from "../../translate/i18n";
 
 const useStyles = makeStyles(theme => ({
 	paper: {
@@ -50,60 +19,93 @@ const useStyles = makeStyles(theme => ({
 		display: "flex",
 		flexDirection: "column",
 		alignItems: "center",
-	},
-	avatar: {
-		margin: theme.spacing(1),
-		backgroundColor: theme.palette.secondary.main,
+		padding: theme.spacing(3),
+		boxShadow: theme.shadows[3],
+		borderRadius: theme.spacing(4), // Arredondando mais a borda
+		backgroundColor: theme.palette.background.paper,
 	},
 	form: {
 		width: "100%",
-		marginTop: theme.spacing(3),
+		marginTop: theme.spacing(2),
 	},
 	submit: {
 		margin: theme.spacing(3, 0, 2),
+		padding: theme.spacing(1.5),
+	},
+	link: {
+		marginTop: theme.spacing(1),
+		textDecoration: "none",
+	},
+	logo: {
+		width: "100%", // Aumentei a largura para preencher mais a área disponível
+		maxWidth: "300px", // Tamanho máximo ajustado para maior visibilidade
+		margin: theme.spacing(2, 0),
 	},
 }));
 
 const UserSchema = Yup.object().shape({
-	name: Yup.string()
-		.min(2, "Too Short!")
-		.max(50, "Too Long!")
-		.required("Required"),
-	password: Yup.string().min(5, "Too Short!").max(50, "Too Long!"),
-	email: Yup.string().email("Invalid email").required("Required"),
+	name: Yup.string().min(2, "Muito curto!").max(50, "Muito longo!").required("Campo obrigatório"),
+	password: Yup.string().min(5, "Muito curto!").max(50, "Muito longo!"),
+	email: Yup.string().email("Email inválido").required("Campo obrigatório"),
+	phone: Yup.string().required("Campo obrigatório")
 });
 
 const SignUp = () => {
 	const classes = useStyles();
 	const history = useHistory();
-	let companyId = null
+	const [allowregister, setallowregister] = useState('enabled');
+	const [trial, settrial] = useState('3');
+	let companyId = null;
 
-	const params = qs.parse(window.location.search)
-	if (params.companyId !== undefined) {
-		companyId = params.companyId
+	useEffect(() => {
+		fetchallowregister();
+		fetchtrial();
+	}, []);
+
+	const fetchtrial = async () => {
+		try {
+			const response = await api.get("/settings/trial");
+			settrial(response.data.value);
+		} catch (error) {
+			console.error('Erro ao recuperar trial', error);
+		}
+	};
+
+	const fetchallowregister = async () => {
+		try {
+			const response = await api.get("/settings/allowregister");
+			setallowregister(response.data.value);
+		} catch (error) {
+			console.error('Erro ao recuperar allowregister', error);
+		}
+	};
+
+	if (allowregister === "disabled") {
+		history.push("/login");
 	}
 
-	const initialState = { name: "", email: "", phone: "", password: "", planId: "", };
+	const params = qs.parse(window.location.search);
+	if (params.companyId !== undefined) {
+		companyId = params.companyId;
+	}
 
+	const initialState = { name: "", email: "", phone: "", password: "", planId: "disabled" };
 	const [user] = useState(initialState);
-	const dueDate = moment().add(7, "day").format();
+	const dueDate = moment().add(trial, "day").format();
+
 	const handleSignUp = async values => {
-		Object.assign(values, { recurrence: "MENSAL" });
-		Object.assign(values, { dueDate: dueDate });
-		Object.assign(values, { status: "t" });
-		Object.assign(values, { campaignsEnabled: true });
+		Object.assign(values, { recurrence: "MENSAL", dueDate, status: "t", campaignsEnabled: true });
 		try {
 			await openApi.post("/companies/cadastro", values);
 			toast.success(i18n.t("signup.toasts.success"));
 			history.push("/login");
 		} catch (err) {
-			console.log(err);
 			toastError(err);
 		}
 	};
 
 	const [plans, setPlans] = useState([]);
-	const { list: listPlans } = usePlans();
+	const { register: listPlans } = usePlans();
 
 	useEffect(() => {
 		async function fetchData() {
@@ -113,18 +115,14 @@ const SignUp = () => {
 		fetchData();
 	}, []);
 
+	const logo = `${process.env.REACT_APP_BACKEND_URL}/public/logotipos/signup.png`;
+	const logoWithRandom = `${logo}?r=${Math.random()}`;
 
 	return (
 		<Container component="main" maxWidth="xs">
 			<CssBaseline />
 			<div className={classes.paper}>
-				<div>
-					<img style={{ margin: "0 auto", height: "80px", width: "100%" }} src={logo} alt="Whats" />
-				</div>
-				{/*<Typography component="h1" variant="h5">
-					{i18n.t("signup.title")}
-				</Typography>*/}
-				{/* <form className={classes.form} noValidate onSubmit={handleSignUp}> */}
+				<img src={logoWithRandom} alt={`${process.env.REACT_APP_NAME_SYSTEM}`} className={classes.logo} />
 				<Formik
 					initialValues={user}
 					enableReinitialize={true}
@@ -136,7 +134,7 @@ const SignUp = () => {
 						}, 400);
 					}}
 				>
-					{({ touched, errors, isSubmitting }) => (
+					{({ touched, errors, setFieldValue }) => (
 						<Form className={classes.form}>
 							<Grid container spacing={2}>
 								<Grid item xs={12}>
@@ -152,7 +150,6 @@ const SignUp = () => {
 										label="Nome da Empresa"
 									/>
 								</Grid>
-
 								<Grid item xs={12}>
 									<Field
 										as={TextField}
@@ -167,31 +164,26 @@ const SignUp = () => {
 										required
 									/>
 								</Grid>
-								
-							<Grid item xs={12}>
-								<Field
-									as={InputMask}
-									mask="(99) 99999-9999"
-									variant="outlined"
-									fullWidth
-									id="phone"
-									name="phone"
-									error={touched.phone && Boolean(errors.phone)}
-									helperText={touched.phone && errors.phone}
-									autoComplete="phone"
-									required
-								>
-									{({ field }) => (
-										<TextField
-											{...field}
-											variant="outlined"
-											fullWidth
-											label="DDD988888888"
-											inputProps={{ maxLength: 11 }} // Definindo o limite de caracteres
-										/>
-									)}
-								</Field>
-							</Grid>
+								<Grid item xs={12}>
+									<InputMask
+										mask="(99) 99999-9999"
+										onChange={e => setFieldValue("phone", e.target.value)}
+									>
+										{() => (
+											<TextField
+												variant="outlined"
+												fullWidth
+												id="phone"
+												label="Telefone"
+												name="phone"
+												error={touched.phone && Boolean(errors.phone)}
+												helperText={touched.phone && errors.phone}
+												autoComplete="phone"
+												required
+											/>
+										)}
+									</InputMask>
+								</Grid>
 								<Grid item xs={12}>
 									<Field
 										as={TextField}
@@ -208,22 +200,19 @@ const SignUp = () => {
 									/>
 								</Grid>
 								<Grid item xs={12}>
-									<InputLabel htmlFor="plan-selection">Plano</InputLabel>
-									<Field
-										as={Select}
-										variant="outlined"
-										fullWidth
-										id="plan-selection"
-										label="Plano"
-										name="planId"
-										required
-									>
-										{plans.map((plan, key) => (
-											<MenuItem key={key} value={plan.id}>
-												{plan.name} - Atendentes: {plan.users} - WhatsApp: {plan.connections} - Filas: {plan.queues} - R$ {plan.value}
+									<FormControl variant="outlined" fullWidth>
+										<InputLabel>Plano</InputLabel>
+										<Field as={Select} name="planId" label="Plano" required>
+											<MenuItem value="disabled" disabled>
+												<em>Selecione seu plano de assinatura</em>
 											</MenuItem>
-										))}
-									</Field>
+											{plans.map((plan, key) => (
+												<MenuItem key={key} value={plan.id}>
+													{plan.name} - {plan.connections} WhatsApps - {plan.users} Usuários - R$ {plan.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+												</MenuItem>
+											))}
+										</Field>
+									</FormControl>
 								</Grid>
 							</Grid>
 							<Button
@@ -235,14 +224,9 @@ const SignUp = () => {
 							>
 								{i18n.t("signup.buttons.submit")}
 							</Button>
-							<Grid container justify="flex-end">
+							<Grid container justifyContent="flex-end">
 								<Grid item>
-									<Link
-										href="#"
-										variant="body2"
-										component={RouterLink}
-										to="/login"
-									>
+									<Link variant="body2" component={RouterLink} to="/login" className={classes.link}>
 										{i18n.t("signup.buttons.login")}
 									</Link>
 								</Grid>
@@ -251,7 +235,7 @@ const SignUp = () => {
 					)}
 				</Formik>
 			</div>
-			<Box mt={5}>{/* <Copyright /> */}</Box>
+			<Box mt={5} />
 		</Container>
 	);
 };

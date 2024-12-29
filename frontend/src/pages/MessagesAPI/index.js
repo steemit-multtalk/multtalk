@@ -2,18 +2,27 @@ import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
+
 import { i18n } from "../../translate/i18n";
 import { Button, CircularProgress, Grid, TextField, Typography } from "@material-ui/core";
 import { Field, Form, Formik } from "formik";
 import toastError from "../../errors/toastError";
 import { toast } from "react-toastify";
+// import api from "../../services/api";
 import axios from "axios";
 import usePlans from "../../hooks/usePlans";
 
 const useStyles = makeStyles((theme) => ({
-
+  mainPaper: {
+    flex: 1,
+    padding: theme.spacing(2),
+    paddingBottom: 100
+  },
+  mainHeader: {
+    marginTop: theme.spacing(1),
+  },
   elementMargin: {
-    marginBottom: theme.spacing(2), // Espaço entre elementos
+    padding: theme.spacing(2),
   },
   formContainer: {
     maxWidth: 500,
@@ -27,9 +36,9 @@ const MessagesAPI = () => {
   const classes = useStyles();
   const history = useHistory();
 
-  const [formMessageTextData,] = useState({ token: '', number: '', body: '' });
-  const [formMessageMediaData,] = useState({ token: '', number: '', medias: '' });
-  const [file, setFile] = useState({});
+  const [formMessageTextData,] = useState({ token: '', number: '', body: '' })
+  const [formMessageMediaData,] = useState({ token: '', number: '', medias: '' })
+  const [file, setFile] = useState({})
 
   const { getPlanCompany } = usePlans();
 
@@ -49,8 +58,8 @@ const MessagesAPI = () => {
   }, []);
 
   const getEndpoint = () => {
-    return process.env.REACT_APP_BACKEND_URL + '/api/messages/send';
-  };
+    return process.env.REACT_APP_BACKEND_URL + '/api/messages/send'
+  }
 
   const handleSendTextMessage = async (values) => {
     const { number, body } = values;
@@ -64,12 +73,12 @@ const MessagesAPI = () => {
           'Content-type': 'application/json',
           'Authorization': `Bearer ${values.token}`
         }
-      });
+      })
       toast.success('Mensagem enviada com sucesso');
     } catch (err) {
       toastError(err);
     }
-  };
+  }
 
   const handleSendMediaMessage = async (values) => {
     try {
@@ -86,12 +95,12 @@ const MessagesAPI = () => {
           'Content-type': 'multipart/form-data',
           'Authorization': `Bearer ${values.token}`
         }
-      });
+      })
       toast.success('Mensagem enviada com sucesso');
     } catch (err) {
       toastError(err);
     }
-  };
+  }
 
   const renderFormMessageText = () => {
     return (
@@ -102,9 +111,10 @@ const MessagesAPI = () => {
           setTimeout(async () => {
             await handleSendTextMessage(values);
             actions.setSubmitting(false);
-            actions.resetForm();
+            actions.resetForm()
           }, 400);
         }}
+        className={classes.elementMargin}
       >
         {({ isSubmitting }) => (
           <Form className={classes.formContainer}>
@@ -127,6 +137,7 @@ const MessagesAPI = () => {
                   as={TextField}
                   label={i18n.t("messagesAPI.textMessage.number")}
                   name="number"
+                  autoFocus
                   variant="outlined"
                   margin="dense"
                   fullWidth
@@ -139,6 +150,7 @@ const MessagesAPI = () => {
                   as={TextField}
                   label={i18n.t("messagesAPI.textMessage.body")}
                   name="body"
+                  autoFocus
                   variant="outlined"
                   margin="dense"
                   fullWidth
@@ -165,8 +177,8 @@ const MessagesAPI = () => {
           </Form>
         )}
       </Formik>
-    );
-  };
+    )
+  }
 
   const renderFormMessageMedia = () => {
     return (
@@ -177,11 +189,12 @@ const MessagesAPI = () => {
           setTimeout(async () => {
             await handleSendMediaMessage(values);
             actions.setSubmitting(false);
-            actions.resetForm();
-            document.getElementById('medias').files = null;
-            document.getElementById('medias').value = null;
+            actions.resetForm()
+            document.getElementById('medias').files = null
+            document.getElementById('medias').value = null
           }, 400);
         }}
+        className={classes.elementMargin}
       >
         {({ isSubmitting }) => (
           <Form className={classes.formContainer}>
@@ -204,6 +217,7 @@ const MessagesAPI = () => {
                   as={TextField}
                   label={i18n.t("messagesAPI.mediaMessage.number")}
                   name="number"
+                  autoFocus
                   variant="outlined"
                   margin="dense"
                   fullWidth
@@ -233,16 +247,28 @@ const MessagesAPI = () => {
           </Form>
         )}
       </Formik>
-    );
-  };
+    )
+  }
 
   return (
     <Paper
       className={classes.mainPaper}
-      style={{ marginLeft: "5px" }}
+      style={{marginLeft: "5px"}}
+      // className={classes.elementMargin}
       variant="outlined"
     >
-
+      <Typography variant="h5">
+        Documentação para envio de mensagens
+      </Typography>
+      <Typography variant="h6" color="primary" className={classes.elementMargin}>
+        Métodos de Envio
+      </Typography>
+      <Typography component="div">
+        <ol>
+          <li>Mensagens de Texto</li>
+          <li>Mensagens de Media</li>
+        </ol>
+      </Typography>
       <Typography variant="h6" color="primary" className={classes.elementMargin}>
         Instruções
       </Typography>
@@ -251,7 +277,7 @@ const MessagesAPI = () => {
         <ul>
           <li>Antes de enviar mensagens, é necessário o cadastro do token vinculado à conexão que enviará as mensagens. <br />Para realizar o cadastro acesse o menu "Conexões", clique no botão editar da conexão e insira o token no devido campo.</li>
           <li>
-            O número para envio não deve ter máscara ou caracteres especiais e deve ser composto por:
+            O número para envio não deve ter mascara ou caracteres especiais e deve ser composto por:
             <ul>
               <li>Código do país</li>
               <li>DDD</li>
@@ -261,7 +287,6 @@ const MessagesAPI = () => {
         </ul>
       </Typography>
       <Typography variant="h6" color="primary" className={classes.elementMargin}>
-       
         1. Mensagens de Texto
       </Typography>
       <Grid container>

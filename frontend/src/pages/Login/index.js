@@ -1,165 +1,167 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Link as RouterLink } from "react-router-dom";
-
-import Button from "@material-ui/core/Button";
-import CssBaseline from "@material-ui/core/CssBaseline";
-import TextField from "@material-ui/core/TextField";
-import Link from "@material-ui/core/Link";
-import Grid from "@material-ui/core/Grid"; 
-import Box from "@material-ui/core/Box";
-import Typography from "@material-ui/core/Typography";
+import { Button, CssBaseline, TextField, Link, Grid, Container } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
-import Container from "@material-ui/core/Container";
-import { versionSystem } from "../../../package.json";
+import api from "../../services/api";
 import { i18n } from "../../translate/i18n";
-import { nomeEmpresa } from "../../../package.json";
 import { AuthContext } from "../../context/Auth/AuthContext";
-import logo from "../../assets/logo.png";
-
-
-const Copyright = () => {
-	return (
-		<Typography variant="body2" color="primary" align="center">
-			{"Copyright "}
- 			<Link color="primary" href="#">
- 				{ nomeEmpresa } - v { versionSystem }
- 			</Link>{" "}
- 			{new Date().getFullYear()}
- 			{"."}
- 		</Typography>
- 	);
- };
 
 const useStyles = makeStyles(theme => ({
-	root: {
-		width: "100vw",
-		height: "100vh",
-		//background: "linear-gradient(to right, #76EE00 , #76EE00 , #458B00)",
-		backgroundImage: "url(https://steemit.com.br/images/background.png)",
-		backgroundRepeat: "no-repeat",
-		backgroundSize: "100% 100%",
-		backgroundPosition: "center",
-		display: "flex",
-		flexDirection: "column",
-		alignItems: "center",
-		justifyContent: "center",
-		textAlign: "center",
-	},
-	paper: {
-		backgroundColor: theme.palette.login, //DARK MODE PLW DESIGN//
-		display: "flex",
-		flexDirection: "column",
-		alignItems: "center",
-		padding: "55px 30px",
-		borderRadius: "12.5px",
-	},
-	avatar: {
-		margin: theme.spacing(1),  
-		backgroundColor: theme.palette.secondary.main,
-	},
-	form: {
-		width: "100%", // Fix IE 11 issue.
-		marginTop: theme.spacing(1),
-	},
-	submit: {
-		margin: theme.spacing(3, 0, 2),
-	},
-	powered: {
-		color: "white"
-	}
+    root: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        backgroundColor: theme.palette.background.default,
+    },
+    paper: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: theme.spacing(4, 3),
+        width: "100%",
+        maxWidth: "400px",
+        boxShadow: theme.shadows[2],
+        borderRadius: "20px", // Arredondamento da borda do contêiner
+        backgroundColor: theme.palette.background.paper,
+    },
+    logo: {
+        width: "90%", // Aumentado
+        maxWidth: "300px", // Ajustado para maior tamanho
+        marginBottom: theme.spacing(2),
+    },
+    form: {
+        width: "100%",
+        marginTop: theme.spacing(2),
+    },
+    inputField: {
+        marginBottom: theme.spacing(2),
+        '& .MuiInput-underline:before': {
+            borderBottom: "2px solid #ccc",
+        },
+        '& .MuiInput-underline:hover:before': {
+            borderBottom: "2px solid #000",
+        },
+        '& .MuiInput-underline:after': {
+            borderBottom: "2px solid #2575fc",
+        },
+    },
+    submit: {
+        margin: theme.spacing(3, 0, 2),
+        padding: theme.spacing(1.5),
+    },
+    link: {
+        marginTop: theme.spacing(1),
+        textDecoration: "none",
+        '&:hover': {
+            textDecoration: "underline",
+        },
+    }
 }));
 
 const Login = () => {
-	const classes = useStyles();
+    const classes = useStyles();
+    const [user, setUser] = useState({ email: "", password: "" });
+    const { handleLogin } = useContext(AuthContext);
+    const [viewregister, setviewregister] = useState('disabled');
 
-	const [user, setUser] = useState({ email: "", password: "" });
+    const handleChangeInput = e => {
+        setUser({ ...user, [e.target.name]: e.target.value });
+    };
 
-	const { handleLogin } = useContext(AuthContext);
+    useEffect(() => {
+        fetchviewregister();
+    }, []);
 
-	const handleChangeInput = e => {
-		setUser({ ...user, [e.target.name]: e.target.value });
-	};
+    const fetchviewregister = async () => {
+        try {
+            const responsev = await api.get("/settings/viewregister");
+            const viewregisterX = responsev?.data?.value;
+            setviewregister(viewregisterX);
+        } catch (error) {
+            console.error('Error retrieving viewregister', error);
+        }
+    };
 
-	const handlSubmit = e => {
-		e.preventDefault();
-		handleLogin(user);
-	};
+    const handleSubmit = e => {
+        e.preventDefault();
+        handleLogin(user);
+    };
 
-	return (
-		<div className={classes.root}>
-		<Container component="main" maxWidth="xs">
-			<CssBaseline/>
-			<div className={classes.paper}>
-				<div>
-					<img style={{ margin: "0 auto", width: "100%" }} src={logo} alt="Whats" />
-				</div>
-				{/*<Typography component="h1" variant="h5">
-					{i18n.t("login.title")}
-				</Typography>*/}
-				<form className={classes.form} noValidate onSubmit={handlSubmit}>
-					<TextField
-						variant="outlined"
-						margin="normal"
-						required
-						fullWidth
-						id="email"
-						label={i18n.t("login.form.email")}
-						name="email"
-						value={user.email}
-						onChange={handleChangeInput}
-						autoComplete="email"
-						autoFocus
-					/>
-					<TextField
-						variant="outlined"
-						margin="normal"
-						required
-						fullWidth
-						name="password"
-						label={i18n.t("login.form.password")}
-						type="password"
-						id="password"
-						value={user.password}
-						onChange={handleChangeInput}
-						autoComplete="current-password"
-					/>
-					
-					<Grid container justify="flex-end">
-					  <Grid item xs={6} style={{ textAlign: "right" }}>
-						<Link component={RouterLink} to="/forgetpsw" variant="body2">
-						  Recuperar senha?
-						</Link>
-					  </Grid>
-					</Grid>
-					
-					<Button
-						type="submit"
-						fullWidth
-						variant="contained"
-						color="primary"
-						className={classes.submit}
-					>
-						{i18n.t("login.buttons.submit")}
-					</Button>
-					{ <Grid container>
-						<Grid item>
-							<Link
-								href="#"
-								variant="body2"
-								component={RouterLink}
-								to="/signup"
-							>
-								{i18n.t("login.buttons.register")}
-							</Link>
-						</Grid>
-					</Grid> }
-				</form>
-			
-			</div>
-			<Box mt={8}></Box>
-		</Container>
-		</div>
-	);
+    const logo = `${process.env.REACT_APP_BACKEND_URL}/public/logotipos/login.png`;
+    const randomValue = Math.random();
+    const logoWithRandom = `${logo}?r=${randomValue}`;
+
+    return (
+        <div className={classes.root}>
+            <Container component="main" maxWidth="xs">
+                <CssBaseline />
+                <div className={classes.paper}>
+                    <img src={logoWithRandom} alt={`${process.env.REACT_APP_NAME_SYSTEM}`} className={classes.logo} />
+                    <form className={classes.form} noValidate onSubmit={handleSubmit}>
+                        <TextField
+                            variant="standard"
+                            margin="normal"
+                            required
+                            fullWidth
+                            id="email"
+                            label={i18n.t("login.form.email")}
+                            name="email"
+                            value={user.email}
+                            onChange={handleChangeInput}
+                            autoComplete="email"
+                            autoFocus
+                            className={classes.inputField}
+                        />
+                        <TextField
+                            variant="standard"
+                            margin="normal"
+                            required
+                            fullWidth
+                            name="password"
+                            label={i18n.t("login.form.password")}
+                            type="password"
+                            id="password"
+                            value={user.password}
+                            onChange={handleChangeInput}
+                            autoComplete="current-password"
+                            className={classes.inputField}
+                        />
+                        <Grid container justify="flex-end">
+                            <Grid item>
+                                <Link component={RouterLink} to="/forgetpsw" variant="body2" className={classes.link}>
+                                    Esqueceu sua senha?
+                                </Link>
+                            </Grid>
+                        </Grid>
+                        <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            color="primary"
+                            className={classes.submit}
+                        >
+                            {i18n.t("login.buttons.submit")}
+                        </Button>
+                        {viewregister === "enabled" && (
+                            <Grid container justifyContent="center">
+                                <Grid item>
+                                    <Link
+                                        component={RouterLink}
+                                        to="/signup"
+                                        variant="body2"
+                                        className={classes.link}
+                                    >
+                                        {i18n.t("login.buttons.register")}
+                                    </Link>
+                                </Grid>
+                            </Grid>
+                        )}
+                    </form>
+                </div>
+            </Container>
+        </div>
+    );
 };
 
 export default Login;

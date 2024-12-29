@@ -25,47 +25,29 @@ const CreateTicketService = async ({
   whatsappId
 }: Request): Promise<Ticket> => {
   let whatsapp;
-  
 
-  if (whatsappId !== undefined && whatsappId !== null && whatsappId !==  "" && whatsappId !==  "undefined") {
+  if (whatsappId !== undefined && whatsappId !== null && whatsappId !==  "") {
     whatsapp = await ShowWhatsAppService(whatsappId, companyId)
   }
   
   let defaultWhatsapp = await GetDefaultWhatsAppByUser(userId);
-  
 
   if (whatsapp) {
     defaultWhatsapp = whatsapp;
   }
-  
-  
   if (!defaultWhatsapp)
     defaultWhatsapp = await GetDefaultWhatsApp(companyId);
-	
 
   await CheckContactOpenTickets(contactId, whatsappId);
-  
 
   const { isGroup } = await ShowContactService(contactId, companyId);
-  
-  const whereClause = {
-	  contactId,
-	  companyId
-	};
-
-	if (whatsappId) {
-	// @ts-ignore
-	  whereClause.whatsappId = whatsappId;
-	}
 
   const [{ id }] = await Ticket.findOrCreate({
-    where: whereClause,
-	//{
-     // contactId,
-     // companyId,
-     // whatsappId // aqui ele tava procurando um ticket ja aberto na conexão x , como não tava vindo nenhum valor ele tava dando erro ...
-	 // vou pegar uma config aqui, pra ele deixar dinamico isso ... vai que isso buga outra parte do seu sistema ...
-   // },
+    where: {
+      contactId,
+      companyId,
+      whatsappId
+    },
     defaults: {
       contactId,
       companyId,

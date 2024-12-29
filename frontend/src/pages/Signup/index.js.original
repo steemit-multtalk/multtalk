@@ -1,0 +1,243 @@
+import React, { useState, useEffect } from "react";
+import qs from 'query-string';
+import * as Yup from "yup";
+import { useHistory, Link as RouterLink } from "react-router-dom";
+import { toast } from "react-toastify";
+import { Formik, Form, Field } from "formik";
+import usePlans from "../../hooks/usePlans";
+import { Button, CssBaseline, TextField, Link, Grid, Box, Container, FormControl, InputLabel, MenuItem, Select } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core/styles";
+import InputMask from 'react-input-mask';
+import api, { openApi } from "../../services/api";
+import toastError from "../../errors/toastError";
+import moment from "moment";
+import { i18n } from "../../translate/i18n";
+
+const useStyles = makeStyles(theme => ({
+	paper: {
+		marginTop: theme.spacing(8),
+		display: "flex",
+		flexDirection: "column",
+		alignItems: "center",
+		padding: theme.spacing(3),
+		boxShadow: theme.shadows[3],
+		borderRadius: theme.shape.borderRadius,
+		backgroundColor: theme.palette.background.paper,
+	},
+	form: {
+		width: "100%",
+		marginTop: theme.spacing(2),
+	},
+	submit: {
+		margin: theme.spacing(3, 0, 2),
+		padding: theme.spacing(1.5),
+	},
+	link: {
+		marginTop: theme.spacing(1),
+		textDecoration: "none",
+	},
+	logo: {
+		width: "70%",
+		maxWidth: "200px",
+		margin: theme.spacing(2, 0),
+	},
+}));
+
+const UserSchema = Yup.object().shape({
+	name: Yup.string().min(2, "Muito curto!").max(50, "Muito longo!").required("Campo obrigatório"),
+	password: Yup.string().min(5, "Muito curto!").max(50, "Muito longo!"),
+	email: Yup.string().email("Email inválido").required("Campo obrigatório"),
+	phone: Yup.string().required("Campo obrigatório")
+});
+
+const SignUp = () => {
+	const classes = useStyles();
+	const history = useHistory();
+	const [allowregister, setallowregister] = useState('enabled');
+	const [trial, settrial] = useState('3');
+	let companyId = null;
+
+	useEffect(() => {
+		fetchallowregister();
+		fetchtrial();
+	}, []);
+
+	const fetchtrial = async () => {
+		try {
+			const response = await api.get("/settings/trial");
+			settrial(response.data.value);
+		} catch (error) {
+			console.error('Erro ao recuperar trial', error);
+		}
+	};
+
+	const fetchallowregister = async () => {
+		try {
+			const response = await api.get("/settings/allowregister");
+			setallowregister(response.data.value);
+		} catch (error) {
+			console.error('Erro ao recuperar allowregister', error);
+		}
+	};
+
+	if (allowregister === "disabled") {
+		history.push("/login");
+	}
+
+	const params = qs.parse(window.location.search);
+	if (params.companyId !== undefined) {
+		companyId = params.companyId;
+	}
+
+	const initialState = { name: "", email: "", phone: "", password: "", planId: "disabled" };
+	const [user] = useState(initialState);
+	const dueDate = moment().add(trial, "day").format();
+
+	const handleSignUp = async values => {
+		Object.assign(values, { recurrence: "MENSAL", dueDate, status: "t", campaignsEnabled: true });
+		try {
+			await openApi.post("/companies/cadastro", values);
+			toast.success(i18n.t("signup.toasts.success"));
+			history.push("/login");
+		} catch (err) {
+			toastError(err);
+		}
+	};
+
+	const [plans, setPlans] = useState([]);
+	const { register: listPlans } = usePlans();
+
+	useEffect(() => {
+		async function fetchData() {
+			const list = await listPlans();
+			setPlans(list);
+		}
+		fetchData();
+	}, []);
+
+	const logo = `${process.env.REACT_APP_BACKEND_URL}/public/logotipos/signup.png`;
+	const logoWithRandom = `${logo}?r=${Math.random()}`;
+
+	return (
+		<Container component="main" maxWidth="xs">
+			<CssBaseline />
+			<div className={classes.paper}>
+				<img src={logoWithRandom} alt={`${process.env.REACT_APP_NAME_SYSTEM}`} className={classes.logo} />
+				<Formik
+					initialValues={user}
+					enableReinitialize={true}
+					validationSchema={UserSchema}
+					onSubmit={(values, actions) => {
+						setTimeout(() => {
+							handleSignUp(values);
+							actions.setSubmitting(false);
+						}, 400);
+					}}
+				>
+					{({ touched, errors, setFieldValue }) => (
+						<Form className={classes.form}>
+							<Grid container spacing={2}>
+								<Grid item xs={12}>
+									<Field
+										as={TextField}
+										autoComplete="name"
+										name="name"
+										error={touched.name && Boolean(errors.name)}
+										helperText={touched.name && errors.name}
+										variant="outlined"
+										fullWidth
+										id="name"
+										label="Nome da Empresa"
+									/>
+								</Grid>
+								<Grid item xs={12}>
+									<Field
+										as={TextField}
+										variant="outlined"
+										fullWidth
+										id="email"
+										label={i18n.t("signup.form.email")}
+										name="email"
+										error={touched.email && Boolean(errors.email)}
+										helperText={touched.email && errors.email}
+										autoComplete="email"
+										required
+									/>
+								</Grid>
+								<Grid item xs={12}>
+									<InputMask
+										mask="(99) 99999-9999"
+										onChange={e => setFieldValue("phone", e.target.value)}
+									>
+										{() => (
+											<TextField
+												variant="outlined"
+												fullWidth
+												id="phone"
+												label="Telefone"
+												name="phone"
+												error={touched.phone && Boolean(errors.phone)}
+												helperText={touched.phone && errors.phone}
+												autoComplete="phone"
+												required
+											/>
+										)}
+									</InputMask>
+								</Grid>
+								<Grid item xs={12}>
+									<Field
+										as={TextField}
+										variant="outlined"
+										fullWidth
+										name="password"
+										error={touched.password && Boolean(errors.password)}
+										helperText={touched.password && errors.password}
+										label={i18n.t("signup.form.password")}
+										type="password"
+										id="password"
+										autoComplete="current-password"
+										required
+									/>
+								</Grid>
+								<Grid item xs={12}>
+									<FormControl variant="outlined" fullWidth>
+										<InputLabel>Plano</InputLabel>
+										<Field as={Select} name="planId" label="Plano" required>
+											<MenuItem value="disabled" disabled>
+												<em>Selecione seu plano de assinatura</em>
+											</MenuItem>
+											{plans.map((plan, key) => (
+												<MenuItem key={key} value={plan.id}>
+													{plan.name} - {plan.connections} WhatsApps - {plan.users} Usuários - R$ {plan.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+												</MenuItem>
+											))}
+										</Field>
+									</FormControl>
+								</Grid>
+							</Grid>
+							<Button
+								type="submit"
+								fullWidth
+								variant="contained"
+								color="primary"
+								className={classes.submit}
+							>
+								{i18n.t("signup.buttons.submit")}
+							</Button>
+							<Grid container justifyContent="flex-end">
+								<Grid item>
+									<Link variant="body2" component={RouterLink} to="/login" className={classes.link}>
+										{i18n.t("signup.buttons.login")}
+									</Link>
+								</Grid>
+							</Grid>
+						</Form>
+					)}
+				</Formik>
+			</div>
+			<Box mt={5} />
+		</Container>
+	);
+};
+
+export default SignUp;

@@ -1,9 +1,8 @@
-import { subSeconds } from "date-fns";
+import { subHours } from "date-fns";
 import { Op } from "sequelize";
 import Contact from "../../models/Contact";
 import Ticket from "../../models/Ticket";
 import ShowTicketService from "./ShowTicketService";
-import ListSettingsServiceOne from "../SettingServices/ListSettingsServiceOne";
 import FindOrCreateATicketTrakingService from "./FindOrCreateATicketTrakingService";
 import Setting from "../../models/Setting";
 import Whatsapp from "../../models/Whatsapp";
@@ -13,7 +12,7 @@ interface TicketData {
   companyId?: number;
   unreadMessages?: number;
 }
-const timeCreateNewTicket = 2;
+
 const FindOrCreateTicketService = async (
   contact: Contact,
   whatsappId: number,
@@ -24,7 +23,7 @@ const FindOrCreateTicketService = async (
   let ticket = await Ticket.findOne({
     where: {
       status: {
-        [Op.or]: ["open", "pending"]
+        [Op.or]: ["open", "pending", "closed"]
       },
       contactId: groupContact ? groupContact.id : contact.id,
       companyId,
@@ -75,7 +74,7 @@ const FindOrCreateTicketService = async (
     ticket = await Ticket.findOne({
       where: {
         updatedAt: {
-          [Op.between]: [+subSeconds(new Date(), timeCreateNewTicket), +new Date()]
+          [Op.between]: [+subHours(new Date(), 2), +new Date()]
         },
         contactId: contact.id
       },

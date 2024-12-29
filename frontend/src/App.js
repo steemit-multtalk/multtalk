@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 
 import "react-toastify/dist/ReactToastify.css";
 import { QueryClient, QueryClientProvider } from "react-query";
-
+import lightBackground from '../src/assets/wa-background-light.png';
+import darkBackground from '../src/assets/wa-background-dark.jpg';
 import { ptBR } from "@material-ui/core/locale";
 import { createTheme, ThemeProvider } from "@material-ui/core/styles";
 import { useMediaQuery } from "@material-ui/core";
@@ -35,25 +36,31 @@ const App = () => {
                 "&::-webkit-scrollbar": {
                     width: '8px',
                     height: '8px',
+					borderRadius: "8px",
                 },
                 "&::-webkit-scrollbar-thumb": {
                     boxShadow: 'inset 0 0 6px rgba(0, 0, 0, 0.3)',
-                    backgroundColor: "#6a0dad",
+                    backgroundColor: "#701198",
+					borderRadius: "8px",
                 },
             },
             scrollbarStylesSoft: {
                 "&::-webkit-scrollbar": {
                     width: "8px",
+					borderRadius: "8px",
                 },
                 "&::-webkit-scrollbar-thumb": {
                     backgroundColor: mode === "light" ? "#F3F3F3" : "#333333",
+					borderRadius: "8px",
                 },
             },
             palette: {
                 type: mode,
-                primary: { main: mode === "light" ? "#6a0dad" : "#FFFFFF" },
-                textPrimary: mode === "light" ? "#6a0dad" : "#FFFFFF",
-                borderPrimary: mode === "light" ? "#6a0dad" : "#FFFFFF",
+                primary: { main: mode === "light" ? "#701198" : "#FFFFFF" },
+				sair: { main: mode === "light" ? "#701198" : "#333" },
+				vcard: { main: mode === "light" ? "#701198" : "#666" },
+                textPrimary: mode === "light" ? "#701198" : "#FFFFFF",
+                borderPrimary: mode === "light" ? "#701198" : "#FFFFFF",
                 dark: { main: mode === "light" ? "#333333" : "#F3F3F3" },
                 light: { main: mode === "light" ? "#F3F3F3" : "#333333" },
                 tabHeaderBackground: mode === "light" ? "#EEE" : "#666",
@@ -74,10 +81,11 @@ const App = () => {
                 total: mode === "light" ? "#fff" : "#222",
                 messageIcons: mode === "light" ? "grey" : "#F3F3F3",
                 inputBackground: mode === "light" ? "#FFFFFF" : "#333",
-                barraSuperior: mode === "light" ? "linear-gradient(to right, #6a0dad, #6a0dad , #6a0dad)" : "#666",
+                barraSuperior: mode === "light" ? "linear-gradient(to right, #701198, #701198 , #701198)" : "#666",
 				boxticket: mode === "light" ? "#EEE" : "#666",
 				campaigntab: mode === "light" ? "#ededed" : "#666",
 				mediainput: mode === "light" ? "#ededed" : "#1c1c1c",
+				contadordash: mode == "light" ? "#fff" : "#fff",
             },
             mode,
         },

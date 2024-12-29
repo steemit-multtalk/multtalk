@@ -32,7 +32,7 @@ import { i18n } from "../translate/i18n";
 import toastError from "../errors/toastError";
 import AnnouncementsPopover from "../components/AnnouncementsPopover";
 
-import logo from "../assets/logo.png";
+//import logo from "../assets/logo.png";
 import { SocketContext } from "../context/Socket/SocketContext";
 import ChatPopover from "../pages/Chat/ChatPopover";
 
@@ -51,14 +51,14 @@ const useStyles = makeStyles((theme) => ({
     [theme.breakpoints.down("sm")]: {
       height: "calc(100vh - 56px)",
     },
-    backgroundColor: theme.palette.fancyBackground, 
+    backgroundColor: theme.palette.fancyBackground,
     '& .MuiButton-outlinedPrimary': {
       color: theme.mode === 'light' ? '#FFF' : '#FFF',
-	  backgroundColor: theme.mode === 'light' ? '#8a00c2' : '#1c1c1c',
+	  backgroundColor: theme.mode === 'light' ? '#701198' : '#1c1c1c',
       //border: theme.mode === 'light' ? '1px solid rgba(0 124 102)' : '1px solid rgba(255, 255, 255, 0.5)',
     },
     '& .MuiTab-textColorPrimary.Mui-selected': {
-      color: theme.mode === 'light' ? '#8a00c2' : '#FFF', //cor das letras do menu original
+      color: theme.mode === 'light' ? '#701198' : '#FFF',
     }
   },
   avatar: {
@@ -75,7 +75,6 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: "space-between",
     padding: "0 8px",
     minHeight: "48px",
-    color: "#FFFFFF", // Adicionando a cor branca ao ícone
     [theme.breakpoints.down("sm")]: {
       height: "48px"
     }
@@ -100,11 +99,9 @@ const useStyles = makeStyles((theme) => ({
   },
   menuButton: {
     marginRight: 36,
-    color: "#FFFFFF", // Adicionando a cor branca ao ícone
   },
   menuButtonHidden: {
     display: "none",
-    color: "#FFFFFF", // Adicionando a cor branca ao ícone
   },
   title: {
     flexGrow: 1,
@@ -115,7 +112,6 @@ const useStyles = makeStyles((theme) => ({
     position: "relative",
     whiteSpace: "nowrap",
     width: drawerWidth,
-    backgroundColor: theme.palette.type === 'dark' ? '#666666' : '#6A0DAD', // Cor de fundo do menu
     transition: theme.transitions.create("width", {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
@@ -125,8 +121,6 @@ const useStyles = makeStyles((theme) => ({
     },
     ...theme.scrollbarStylesSoft
   },
-
-
   drawerPaperClose: {
     overflowX: "hidden",
     transition: theme.transitions.create("width", {
@@ -196,12 +190,67 @@ const LoggedInLayout = ({ children, themeToggle }) => {
   const { colorMode } = useContext(ColorModeContext);
   const greaterThenSm = useMediaQuery(theme.breakpoints.up("sm"));
 
+  // Definindo os logos para modo claro e escuro
+  const logoLight = `${process.env.REACT_APP_BACKEND_URL}/public/logotipos/interno.png`;
+  const logoDark = `${process.env.REACT_APP_BACKEND_URL}/public/logotipos/logo_w.png`;
+
+  // Definindo o logo inicial com base no modo de tema atual
+  const initialLogo = theme.palette.type === 'light' ? logoLight : logoDark;
+  const [logoImg, setLogoImg] = useState(initialLogo);
+
+
   const [volume, setVolume] = useState(localStorage.getItem("volume") || 1);
 
   const { dateToClient } = useDate();
 
 
- 
+  //################### CODIGOS DE TESTE #########################################
+  // useEffect(() => {
+  //   navigator.getBattery().then((battery) => {
+  //     console.log(`Battery Charging: ${battery.charging}`);
+  //     console.log(`Battery Level: ${battery.level * 100}%`);
+  //     console.log(`Charging Time: ${battery.chargingTime}`);
+  //     console.log(`Discharging Time: ${battery.dischargingTime}`);
+  //   })
+  // }, []);
+
+  // useEffect(() => {
+  //   const geoLocation = navigator.geolocation
+
+  //   geoLocation.getCurrentPosition((position) => {
+  //     let lat = position.coords.latitude;
+  //     let long = position.coords.longitude;
+
+  //     console.log('latitude: ', lat)
+  //     console.log('longitude: ', long)
+  //   })
+  // }, []);
+
+  // useEffect(() => {
+  //   const nucleos = window.navigator.hardwareConcurrency;
+
+  //   console.log('Nucleos: ', nucleos)
+  // }, []);
+
+  // useEffect(() => {
+  //   console.log('userAgent', navigator.userAgent)
+  //   if (
+  //     navigator.userAgent.match(/Android/i)
+  //     || navigator.userAgent.match(/webOS/i)
+  //     || navigator.userAgent.match(/iPhone/i)
+  //     || navigator.userAgent.match(/iPad/i)
+  //     || navigator.userAgent.match(/iPod/i)
+  //     || navigator.userAgent.match(/BlackBerry/i)
+  //     || navigator.userAgent.match(/Windows Phone/i)
+  //   ) {
+  //     console.log('Ã© mobile ', true) //celular
+  //   }
+  //   else {
+  //     console.log('nÃ£o Ã© mobile: ', false) //nao Ã© celular
+  //   }
+  // }, []);
+  //##############################################################################
+
   const socketManager = useContext(SocketContext);
 
   useEffect(() => {
@@ -211,7 +260,7 @@ const LoggedInLayout = ({ children, themeToggle }) => {
   }, []);
 
   useEffect(() => {
-    if (document.body.offsetWidth < 600) {
+    if (document.body.offsetWidth < 1000) {
       setDrawerVariant("temporary");
     } else {
       setDrawerVariant("permanent");
@@ -282,13 +331,20 @@ const LoggedInLayout = ({ children, themeToggle }) => {
     }
   };
 
+  useEffect(() => {
+    // Atualiza o logo sempre que o modo do tema muda
+    setLogoImg(theme.palette.type === 'light' ? logoLight : logoDark);
+  }, [theme.palette.type]);
+
   const toggleColorMode = () => {
     colorMode.toggleColorMode();
-  }
+    setLogoImg((prevLogo) => (prevLogo === logoLight ? logoDark : logoLight));
+  };
 
   if (loading) {
     return <BackdropLoading />;
   }
+
 
   return (
     <div className={classes.root}>
@@ -304,7 +360,7 @@ const LoggedInLayout = ({ children, themeToggle }) => {
         open={drawerOpen}
       >
         <div className={classes.toolbarIcon}>
-          <img src={logo} className={classes.logo} alt="logo" />
+          <img src={`${logoImg}?r=${Math.random()}`} style={{ margin: "0 auto" , width: "50%"}} alt={`${process.env.REACT_APP_NAME_SYSTEM}`} />
           <IconButton onClick={() => setDrawerOpen(!drawerOpen)}>
             <ChevronLeftIcon />
           </IconButton>
@@ -409,9 +465,6 @@ const LoggedInLayout = ({ children, themeToggle }) => {
             >
               <MenuItem onClick={handleOpenUserModal}>
                 {i18n.t("mainDrawer.appBar.user.profile")}
-              </MenuItem>
-              <MenuItem onClick={handleClickLogout}>
-                {i18n.t("mainDrawer.appBar.user.logout")}
               </MenuItem>
             </Menu>
           </div>
